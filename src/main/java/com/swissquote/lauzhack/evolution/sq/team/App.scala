@@ -23,26 +23,26 @@ object App {
 	 */
 	def main(args: Array[String]) {
 		// Instantiate our BBook
-		val ourBBook = new ScalaBBook();
+		val ourBBook = new ScalaBBook()
 
 		// Create the application runner
 		val app = new SwissquoteEvolutionBuilder().
 				profile(MarketProfile.SOMETHING).
-				seed(1).
-				team("SQTeam").
+				seed(3).
+				team("Hilt").
 				bBook(ourBBook).
 				filePath(".").
 				interval(1).
-				steps(5000).
+				steps(2).
 				build()
 
 		// Let's go !
 		time {
-			app.run();
+			app.run()
 		}
 
 		// Display the result as JSON in console (also available in the file at "Path")
-		println(app.logBook());
+		println(app.logBook())
 	}
 
 }
