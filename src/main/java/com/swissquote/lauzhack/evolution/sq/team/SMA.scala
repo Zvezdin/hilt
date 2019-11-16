@@ -7,12 +7,14 @@ class SMA(count: Int) extends Indicator {
   var sum = BigDecimal(0)
 
   def price(c: BigDecimal): BigDecimal = {
-    if(buffer.isFull){
+    if(buffer.isAtFullCapacity){
       var prev = buffer.peek()
-      sum = sum +  (c - prev) * (1/count)
+      sum = sum + (c - prev) * (BigDecimal(1) / BigDecimal(count))
     }
 
     buffer.add(c)
     sum
   }
+
+  override def last: BigDecimal = sum
 }

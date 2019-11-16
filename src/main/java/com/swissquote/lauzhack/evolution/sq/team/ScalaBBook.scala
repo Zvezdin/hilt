@@ -4,23 +4,20 @@ import java.util
 
 import scala.BigDecimal
 import com.swissquote.lauzhack.evolution.api.{BBook, Bank, Currency, Price, Trade}
-import org.apache.commons.collections4.queue.CircularFifoQueue
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.nativeblas.Nd4jCuda.NDArray
-import org.ta4j.core.{Bar, BarSeries, BaseBarBuilder, BaseBarSeriesBuilder}
-import org.ta4j.core.aggregator.BaseBarSeriesAggregator
-import org.ta4j.core.num.Num
-
 import scala.collection.mutable
 
-object TeA {
-  // Technical Analysis
-  def getIndicators = List(new SMA(4))
-}
 
 class ScalaBBook extends BBook {
-  implicit def long2decimal(num: Int): BigDecimal = BigDecimal(num)
+
+  def getIndicators = {
+    var a = new SMA(8)
+    var b = new SMA(16)
+    var c = new EMA(4, 12)
+    var d = new EMA(9, 17)
+    List(a, b, new SMA(32), c, d, new MACD(a, b), new MACD(c, d), new RSI())
+  }
+
+  implicit def long2decimal(num: Int): BigDecimal = new BigDecimal(num)
   private var bank: Bank = _
   private var trainingMode = false
 
@@ -43,10 +40,10 @@ class ScalaBBook extends BBook {
    */
   private var dataSet = new mutable.MutableList[INDArray]
 
-  priceTable((Currency.EUR, Currency.CHF)) = TeA.getIndicators
-  priceTable((Currency.JPY, Currency.CHF)) = TeA.getIndicators
-  priceTable((Currency.USD, Currency.CHF)) = TeA.getIndicators
-  priceTable((Currency.GBP, Currency.CHF)) = TeA.getIndicators
+  priceTable((Currency.EUR, Currency.CHF)) = getIndicators
+  priceTable((Currency.JPY, Currency.CHF)) = getIndicators
+  priceTable((Currency.USD, Currency.CHF)) = getIndicators
+  priceTable((Currency.GBP, Currency.CHF)) = getIndicators
 
   override def onInit(): Unit = {
     var builder = new BaseBarSeriesBuilder

@@ -33,7 +33,7 @@ object App {
 				bBook(ourBBook).
 				filePath(".").
 				interval(1).
-				steps(2).
+				steps(5000).
 				build()
 
 		// Let's go !
