@@ -10,7 +10,7 @@ import org.ta4j.core.num.Num
 import scala.collection.mutable
 
 object TeA {
-  def getIndicators = List(new SMA(4))
+  def getIndicators = List(new SMA(4), new SMA(4), new SMA(4))
 
 
 }
@@ -27,8 +27,6 @@ class ScalaBBook extends BBook {
 
 
   override def onInit(): Unit = {
-    var builder = new BaseBarSeriesBuilder
-
     // Start by buying some cash. Don't search for more logic here: numbers are just random..
     bank.buy(new Trade(Currency.EUR, Currency.CHF, new BigDecimal(100000)))
     bank.buy(new Trade(Currency.JPY, Currency.CHF, new BigDecimal(1000000)))
