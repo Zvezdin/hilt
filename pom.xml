@@ -62,6 +62,24 @@
 			<classifier>javadoc</classifier>
 			<systemPath>${project.basedir}/lib/lauzhack-evolution-1.0-javadoc.jar</systemPath>
 		</dependency>
+
+		<dependency>
+			<groupId>org.deeplearning4j</groupId>
+			<artifactId>deeplearning4j-core</artifactId>
+			<version>1.0.0-beta5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-cuda-10.1</artifactId>
+			<version>1.0.0-beta5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.datavec</groupId>
+			<artifactId>datavec-api</artifactId>
+			<version>1.0.0-beta5</version>
+		</dependency>
+
+
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
