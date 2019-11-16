@@ -62,7 +62,11 @@
 			<classifier>javadoc</classifier>
 			<systemPath>${project.basedir}/lib/lauzhack-evolution-1.0-javadoc.jar</systemPath>
 		</dependency>
-
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>2.13.0</version>
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
