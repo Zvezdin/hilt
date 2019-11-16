@@ -29,7 +29,6 @@ class ScalaBBook extends BBook {
   override def onInit(): Unit = {
     var builder = new BaseBarSeriesBuilder
 
-
     // Start by buying some cash. Don't search for more logic here: numbers are just random..
     bank.buy(new Trade(Currency.EUR, Currency.CHF, new BigDecimal(100000)))
     bank.buy(new Trade(Currency.JPY, Currency.CHF, new BigDecimal(1000000)))
@@ -37,12 +36,8 @@ class ScalaBBook extends BBook {
     bank.buy(new Trade(Currency.GBP, Currency.CHF, new BigDecimal(100000)))
 
   }
-
-
-
+  
   override def onTrade(trade: Trade): Unit = {
-
-
 
     if (Math.random < 0.05) {
       val coverTrade = new Trade(trade.base, trade.term, trade.quantity multiply 2)
