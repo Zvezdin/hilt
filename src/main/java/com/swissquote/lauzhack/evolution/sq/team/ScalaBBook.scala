@@ -3,27 +3,29 @@ package com.swissquote.lauzhack.evolution.sq.team;
 import java.math.BigDecimal
 
 import com.swissquote.lauzhack.evolution.api.{BBook, Bank, Currency, Price, Trade}
-import org.ta4j.core.{Bar, BarSeries, BaseBarBuilder, BaseBarSeriesBuilder}
-import org.ta4j.core.aggregator.BaseBarSeriesAggregator
-import org.ta4j.core.num.Num
+
 
 import scala.collection.mutable
 
-object TeA {
-  def getIndicators = List(new SMA(4), new SMA(4), new SMA(4))
-
-
-}
 
 class ScalaBBook extends BBook {
+
+  def getIndicators = {
+    var a = new SMA(8)
+    var b = new SMA(16)
+    var c = new EMA(4, 12)
+    var d = new EMA(9, 17)
+    List(a, b, new SMA(32), c, d, new MACD(a, b), new MACD(c, d), new RSI())
+  }
+
   implicit def long2decimal(num: Int): BigDecimal = new BigDecimal(num)
   private var bank: Bank = _
   private var charts = new mutable.HashMap[(Currency, Currency), List[Indicator]]()
 
-  charts((Currency.EUR, Currency.CHF)) = TeA.getIndicators
-  charts((Currency.JPY, Currency.CHF)) = TeA.getIndicators
-  charts((Currency.USD, Currency.CHF)) = TeA.getIndicators
-  charts((Currency.GBP, Currency.CHF)) = TeA.getIndicators
+  charts((Currency.EUR, Currency.CHF)) = getIndicators
+  charts((Currency.JPY, Currency.CHF)) = getIndicators
+  charts((Currency.USD, Currency.CHF)) = getIndicators
+  charts((Currency.GBP, Currency.CHF)) = getIndicators
 
 
   override def onInit(): Unit = {

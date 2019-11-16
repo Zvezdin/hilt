@@ -15,4 +15,6 @@ class SMA(count: Int) extends Indicator {
     buffer.add(c)
     sum
   }
+
+  override def last: BigDecimal = sum
 }

@@ -7,4 +7,6 @@ class EMA(smoothing: Double, count: Int) extends Indicator {
     prev = c * ( smoothing / ( 1 + count )) + prev * (1 - ( smoothing / ( 1 + count )))
     prev
   }
+
+  override def last: BigDecimal = prev
 }
