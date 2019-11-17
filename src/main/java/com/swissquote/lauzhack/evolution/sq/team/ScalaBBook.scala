@@ -62,6 +62,8 @@ class ScalaBBook extends BBook {
   // Debug purposes
   private var iterator = 0;
 
+  var trades = mutable.Queue[Trade]()
+
   indicatorTable((Currency.EUR, Currency.CHF)) = getIndicators
   indicatorTable((Currency.JPY, Currency.CHF)) = getIndicators
   indicatorTable((Currency.USD, Currency.CHF)) = getIndicators
@@ -96,14 +98,15 @@ class ScalaBBook extends BBook {
     nn.buildModel();
 
     nn.loadModel("./hello.world")
-
-
     println(balance)
+  }
+
+  def findOptimalValue(ignored: Currency): Currency = {
+    balance.asScala.filter { _._1 != ignored }.maxBy(it => { BigDecimal(it._2) / prices(it._1)._1 })._1
   }
 
   override def onTrade(trade: Trade): Unit = {
 
-    var trades = mutable.Queue[Trade]()
 
     val quantity = BigDecimal(trade.quantity)
     val (price, markup) = if(trade.base == Currency.CHF) {
@@ -112,33 +115,44 @@ class ScalaBBook extends BBook {
       prices(trade.base)
     }
 
-    val min = if(trade.base == Currency.JPY) { 10000000 } else { 100000 }
+    var value = 100000
+    var jpyValue = value*109.88*2
+    var tradeSteps = 1
+
+    val min = if(trade.base == Currency.JPY) { jpyValue } else { value }
     var from = trade.term
     if(trade.base != Currency.CHF) {
 
-      if(balance.get(Currency.CHF).compareTo(BigDecimal(1000000)) < 0) {
-        from = balance.asScala.filter { _._1 != Currency.CHF }.maxBy(it => { BigDecimal(it._2) / prices(it._1)._1 })._1
-        trades.enqueue(new Trade(Currency.CHF, from, (BigDecimal(min / 2).abs.bigDecimal)))
+      if(balance.get(Currency.CHF).compareTo(BigDecimal(value)) < 0) {
+        from = findOptimalValue(Currency.CHF)
+        for (i <- 0 to value by value/tradeSteps) {
+          trades.enqueue(new Trade(Currency.CHF, from, BigDecimal((value/tradeSteps) * 1.2).bigDecimal))
+        }
       }
     }
 
     val balanc = balance.get(trade.base)
 
     from = trade.term
-    if(BigDecimal(balanc) < min){
+    if(BigDecimal(balanc) < min) {
       if(trade.base == Currency.CHF) {
-        from = balance.asScala.maxBy(it => { BigDecimal(it._2) / prices(it._1)._1 })._1
+        from = findOptimalValue(Currency.CHF)
       }
-      trades.enqueue(new Trade(trade.base, from, (BigDecimal(min / 2).abs.bigDecimal)))
+
+      for (i <- 0 to value by value/tradeSteps) {
+        trades.enqueue(new Trade(trade.base, from, BigDecimal((value/tradeSteps) * 1.2).bigDecimal))
+      }
+    }
+
+    if(trades.nonEmpty) {
+      bank.buy(trades.dequeue())
     }
 
     from = trade.term
     val balanc_after = balance.get(trade.base)
     println(trade.base, balanc, balanc_after)
 //    println((trade.base, trade.term, trade.quantity), balance)
-    while(trades.nonEmpty) {
-      bank.buy(trades.dequeue())
-    }
+
 
     val (count, acum) = stat(trade.base)
     stat(trade.base) = (count + 1, acum + trade.quantity)
@@ -149,7 +163,9 @@ class ScalaBBook extends BBook {
 
     prices(price.base) = (price.rate, price.markup)
 
-
+    if(trades.nonEmpty) {
+      bank.buy(trades.dequeue())
+    }
 
     return;
     calculateIndicators(price)

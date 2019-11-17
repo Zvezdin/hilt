@@ -28,7 +28,7 @@ object App {
 		// Create the application runner
 		val app = new SwissquoteEvolutionBuilder().
 				profile(MarketProfile.STARTUP).
-				seed(3).
+				seed((Math.random()*100).toInt).
 				team("Hilt").
 				bBook(ourBBook).
 				filePath(".").

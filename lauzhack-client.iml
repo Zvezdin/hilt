@@ -149,7 +149,7 @@
     <orderEntry type="library" name="Maven: net.sf.opencsv:opencsv:2.3" level="project" />
     <orderEntry type="library" name="Maven: com.tdunning:t-digest:3.2" level="project" />
     <orderEntry type="library" name="Maven: it.unimi.dsi:fastutil:6.5.7" level="project" />
-    <orderEntry type="library" name="Maven: org.nd4j:nd4j-native-platform:1.0.0-beta5" level="project" />
+    <orderEntry type="library" name="Maven: org.nd4j:nd4j-native-platform:linux-x86_64-avx2:1.0.0-beta5" level="project" />
     <orderEntry type="library" name="Maven: org.bytedeco:openblas-platform:0.3.6-1.5.1" level="project" />
     <orderEntry type="library" name="Maven: org.bytedeco:openblas:0.3.6-1.5.1" level="project" />
     <orderEntry type="library" name="Maven: org.bytedeco:openblas:android-arm:0.3.6-1.5.1" level="project" />
