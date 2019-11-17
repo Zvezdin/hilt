@@ -18,14 +18,13 @@ import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.dataset.DataSet
 import org.nd4j.linalg.learning.config.{Nesterovs, Sgd}
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
-import org.nd4j.nativeblas.Nd4jCuda.NDArray
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.nd4j.linalg.primitives.Pair
 
+import java.io.File
 
 class NeuralModel {
 
@@ -96,7 +95,7 @@ class NeuralModel {
     // Cast to nothing is needed because the compiler for some reason expects this type
     val data_it = new INDArrayDataSetIterator(data.asInstanceOf[Nothing], batchSize);
 
-    val eval: org.nd4j.evaluation.classification.Evaluation = this.model.evaluate(data_it)
+    val eval = this.model.evaluate(data_it)
 
     return eval;
   }
