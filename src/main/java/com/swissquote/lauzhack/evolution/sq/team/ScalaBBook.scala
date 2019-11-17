@@ -71,7 +71,7 @@ class ScalaBBook extends BBook {
    */
   private var bank: b = _
   private var balance: util.Map[Currency, java.math.BigDecimal] = _
-  private var prices = new mutable.HashMap[(Currency, Currency), (BigDecimal, BigDecimal)]()
+  private var prices = new mutable.HashMap[Currency, (BigDecimal, BigDecimal)]()
 
   override def onInit(): Unit = {
 
@@ -85,7 +85,7 @@ class ScalaBBook extends BBook {
   override def onTrade(trade: Trade): Unit = {
     if (Math.random < 0.05) {
       var quantity = BigDecimal(trade.quantity)
-      var (price, markup) = prices((trade.base, trade.term))
+      var (price, markup) = prices(trade.base))
 
       if ((BigDecimal(balance.get(trade.base)) - (quantity * price * 2 * (1 + markup))) <= 0) {
 
@@ -102,7 +102,7 @@ class ScalaBBook extends BBook {
 
   override def onPrice(price: Price): Unit = {
 
-    prices((price.base, price.term)) = (price.rate, price.markup)
+    prices(price.base) = (price.rate, price.markup)
 
     if (!trainingMode) {
       println("Not training mode")
