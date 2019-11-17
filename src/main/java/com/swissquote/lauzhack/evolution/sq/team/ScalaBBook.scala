@@ -1,20 +1,13 @@
 package com.swissquote.lauzhack.evolution;
 
-import scala.BigDecimal
-import java.util
-
 import scala.collection.JavaConverters._
 import java.util
 
-import scala.BigDecimal
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
-import org.ta4j.core.BaseBarSeriesBuilder
 import com.swissquote.lauzhack.evolution.api.{BBook, Bank, Currency, Price, Trade}
-import com.swissquote.lauzhack.evolution.b
 import com.swissquote.lauzhack.evolution.sq.team._
-import org.nd4j.linalg.api.buffer.DataBuffer
 import org.nd4j.linalg.primitives.Pair
 
 import scala.collection.mutable
@@ -23,7 +16,7 @@ import scala.collection.mutable
 class ScalaBBook extends BBook {
 
   /**
-   * Descriptive names? Nah.
+   * Descriptive names? Nah. Google the acronyms
    * @return
    */
   def getIndicators = {
@@ -33,11 +26,6 @@ class ScalaBBook extends BBook {
     var ema9 = new EMA(9, 17)
     List(sma, sma16, new SMA(32), ema, ema9, new MACD(sma, sma16), new MACD(ema, ema9), new RSI())
   }
-
-  /**
-   * Are we training the algorithm?
-   */
-  private var trainingMode = false
 
   /**
    * A price table with all possible pairs of price changes and indicators
@@ -59,7 +47,6 @@ class ScalaBBook extends BBook {
    * [ N of [64 x [ 5 x 8, 1 ]]]
    */
   private var batches = new mutable.MutableList[util.ArrayList[Pair[INDArray, INDArray]]]()
-  // Debug purposes
   private var iterator = 0;
 
   var trades = mutable.Queue[Trade]()
@@ -75,8 +62,9 @@ class ScalaBBook extends BBook {
   private var bank: b = _
   private var balance: util.Map[Currency, java.math.BigDecimal] = _
   private var prices = new mutable.HashMap[Currency, (BigDecimal, BigDecimal)]()
-  prices(Currency.CHF) = (BigDecimal(1), BigDecimal(1))
+
   var stat = new mutable.HashMap[Currency, (Int, BigDecimal)]()
+  prices(Currency.CHF) = (BigDecimal(1), BigDecimal(1))
 
   stat(Currency.CHF) = (0, BigDecimal(0))
   stat(Currency.EUR) = (0, BigDecimal(0))
@@ -93,12 +81,10 @@ class ScalaBBook extends BBook {
     bank.buy(new Trade(Currency.USD, Currency.CHF, new java.math.BigDecimal(800000)))
     bank.buy(new Trade(Currency.GBP, Currency.CHF, new java.math.BigDecimal(800000)))
 
-
     nn = new NeuralModel();
     nn.buildModel();
 
     nn.loadModel("./hello.world")
-    println(balance)
   }
 
   def findOptimalValue(ignored: Currency): Currency = {
@@ -107,16 +93,22 @@ class ScalaBBook extends BBook {
 
   override def onTrade(trade: Trade): Unit = {
 
-
     val quantity = BigDecimal(trade.quantity)
     val (price, markup) = if(trade.base == Currency.CHF) {
       prices(trade.term)
-    }else{
+    } else {
       prices(trade.base)
     }
 
+    /**
+     * These values are hyperparamters.
+     */
     var value = 100000
-    var jpyValue = value*109.88*2
+    var jpyValue = value*109.88*2 // According to the exchange rate * 2, since the market seems to have japanese bias sometimes
+    /**
+     * Trade steps actually divide the trade prices, because sometimes
+     * it is better to let 100 CHF go, instead of to disrupt the market to failure
+     */
     var tradeSteps = 1
 
     val min = if(trade.base == Currency.JPY) { jpyValue } else { value }
@@ -144,30 +136,31 @@ class ScalaBBook extends BBook {
       }
     }
 
+    // Dequeue something
     if(trades.nonEmpty) {
       bank.buy(trades.dequeue())
     }
 
     from = trade.term
     val balanc_after = balance.get(trade.base)
-    println(trade.base, balanc, balanc_after)
-//    println((trade.base, trade.term, trade.quantity), balance)
-
+    println("Balance: ", trade.base, balanc, balanc_after)
 
     val (count, acum) = stat(trade.base)
     stat(trade.base) = (count + 1, acum + trade.quantity)
-
   }
 
   override def onPrice(price: Price): Unit = {
 
     prices(price.base) = (price.rate, price.markup)
-
+    /**
+     * Empty the trade queue evenly distributed across price tick, so we don't disrupt the market
+     */
     if(trades.nonEmpty) {
       bank.buy(trades.dequeue())
     }
+  }
 
-    return;
+  def neuralNetworkMode(price: Price): Unit = {
     calculateIndicators(price)
 
     allPrices += price
@@ -178,7 +171,7 @@ class ScalaBBook extends BBook {
       println("Loading data has finished...")
       println("++++++++++++++++++++++++++++")
 
-//      println(dataSet)
+      // println(dataSet)
 
       println("++++++++++++++++++++++++++++")
       println("Initializing neural network.")
@@ -190,29 +183,27 @@ class ScalaBBook extends BBook {
       println("++++++++++++++++++++++++++++")
       println("Loading model")
       println("++++++++++++++++++++++++++++")
-//      nn.loadModel("./hello.world")
+      // nn.loadModel("./hello.world")
 
       var epochs = 100;
       for (i <- 0 to epochs) {
-          for (batch <- batches) {
-            println(batch.size())
-            nn.fit(batch)
-            batches.last.get(0).getKey()
-          }
-          println(i + "/" + epochs)
+        for (batch <- batches) {
+          println(batch.size())
+          nn.fit(batch)
+          batches.last.get(0).getKey()
+        }
+        println(i + "/" + epochs)
       }
 
       println("++++++++++++++++++++++++++++")
       println("Finished Training")
       println("++++++++++++++++++++++++++++")
-//      var pair: mutable.MutableList[Pair[INDArray, INDArray]] = dataSet.flatMap { _.asScala }
-//      var x = pair(0).getKey()
+      // var pair: mutable.MutableList[Pair[INDArray, INDArray]] = dataSet.flatMap { _.asScala }
+      // var x = pair(0).getKey()
 
       nn.saveModel("./hello.world")
-//      println(nn.predict(x.reshape(1,40)).toList.head)
-
-//      println("Actual answer: " + pair(0).getValue())
-      Thread.sleep(100000)
+      // println(nn.predict(x.reshape(1,40)).toList.head)
+      // Use the prediction
     }
   }
 
@@ -249,7 +240,9 @@ class ScalaBBook extends BBook {
       var ref = windowSize
 
       el.zipWithIndex.foreach { case(e, j) => {
-        // Normalization, try modified tahn/softmax even though it is kindof obvious it won't work
+        /**
+         *  Normalization, try modified tahn/softmax even though it is kindof obvious it won't work
+         */
         // doubleArr.update(j, (e / newestEl(j)).toDouble)
         doubleArr.update(j, e.toDouble)
       }}
@@ -266,8 +259,7 @@ class ScalaBBook extends BBook {
     // println("##################################")
 
     val finalDatum = new Pair[INDArray, INDArray](data, groundTruth)
-    // finalDatum.add(datum)
-    // If not initialized, initialize
+
     if(batches.isEmpty) {
       batches += new util.ArrayList[Pair[INDArray, INDArray]]()
     } else {
@@ -277,8 +269,6 @@ class ScalaBBook extends BBook {
     }
 
     batches.last.add(finalDatum)
-//    println("All batches: " + batches.size)
-//    println("Current batch: " + batches.last.size())
     finalDatum
   }
 

@@ -9,6 +9,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.nd4j:nd4j-native-platform:linux-x86_64-avx2:1.0.0-beta5" level="project" />
     <orderEntry type="module-library">
       <library name="Maven: com.swissquote.lauzhack.evolution:lauzhack-evolution:1.0">
         <CLASSES>
