@@ -15,6 +15,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
+		<nd4j.version>1.0.0-alpha</nd4j.version>
+		<jackson.version>2.10.0</jackson.version>
 	</properties>
 
 	<build>
@@ -78,6 +80,11 @@
 			<artifactId>datavec-api</artifactId>
 			<version>1.0.0-beta5</version>
 		</dependency>
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-native-platform</artifactId>
+			<version>1.0.0-beta5</version>
+		</dependency>
 
 
 		<dependency>
@@ -103,10 +110,17 @@
 			<version>0.13</version>
 		</dependency>
 
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
 			<version>4.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 
 	</dependencies>

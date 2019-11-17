@@ -4,6 +4,11 @@ import java.util
 
 import scala.BigDecimal
 import com.swissquote.lauzhack.evolution.api.{BBook, Bank, Currency, Price, Trade}
+import org.apache.commons.collections4.queue.CircularFifoQueue
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
+import org.ta4j.core.BaseBarSeriesBuilder
+
 import scala.collection.mutable
 
 
@@ -17,7 +22,6 @@ class ScalaBBook extends BBook {
     List(a, b, new SMA(32), c, d, new MACD(a, b), new MACD(c, d), new RSI())
   }
 
-  implicit def long2decimal(num: Int): BigDecimal = new BigDecimal(num)
   private var bank: Bank = _
   private var trainingMode = false
 
@@ -25,6 +29,7 @@ class ScalaBBook extends BBook {
    * A price table with all possible pairs of price changes and indicators
    */
   private var priceTable = new mutable.HashMap[(Currency, Currency), List[Indicator]]()
+  private var allPrices = new mutable.MutableList[Price]()
 
   /**
    * Windows using circular first in first out queue which updates automatically
@@ -39,6 +44,7 @@ class ScalaBBook extends BBook {
    * Holds the preprocessed dataset
    */
   private var dataSet = new mutable.MutableList[INDArray]
+  private var iterator = 0;
 
   priceTable((Currency.EUR, Currency.CHF)) = getIndicators
   priceTable((Currency.JPY, Currency.CHF)) = getIndicators
@@ -65,10 +71,10 @@ class ScalaBBook extends BBook {
   override def onPrice(price: Price): Unit = {
 
     if (!trainingMode) {
-      println("Not training mode")
+//      println("Not training mode")
 
-      if(window.isFull) {
-        println("Window is ready...")
+      if(window.isAtFullCapacity) {
+//        println("Window is ready...")
         val data = preprocessData(window, BigDecimal(price.rate) > priceWindow.peek().rate)
         // Feed to the network
       }
@@ -77,28 +83,40 @@ class ScalaBBook extends BBook {
       window.add(indicators map { _.price(price.rate) })
       priceWindow.add(price)
 
-      println("WINDOW PEEK:" + window.peek())
+    }
+
+    allPrices += price
+    iterator += 1
+
+    if (iterator == 5000) {
+
     }
   }
 
   def preprocessData(window: CircularFifoQueue[List[BigDecimal]], rising: Boolean): INDArray = {
 
     val arraysToStack = new util.ArrayList[INDArray]()
+    val newestEl = window.get(windowSize - 1)
+
+    var i = 0
 
     window.forEach((el) => {
-      // Normalization here
-      val doubleArr: Array[Double] = el.map { _.toDouble }.toArray
+      var doubleArr = new Array[Double](newestEl.length)
+      var ref = windowSize
+
+      el.zipWithIndex.foreach { case(e, j) => {
+        doubleArr.update(j, (e / newestEl(j)).toDouble)
+      }}
+
       arraysToStack.add(Nd4j.create(doubleArr))
+      println("NICE" + doubleArr)
     })
 
-    val data = Nd4j.hstack(arraysToStack)
-    println(data)
+    val data = Nd4j.vstack(arraysToStack)
+
     dataSet += data
+    i += 1
     data
-  }
-
-  def pairData(): Unit = {
-
   }
 
   override def setBank(bank: Bank): Unit = {
