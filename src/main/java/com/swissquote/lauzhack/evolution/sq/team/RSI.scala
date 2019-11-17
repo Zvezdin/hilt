@@ -6,13 +6,16 @@ class RSI extends Indicator {
   var loss = new SMA(4)
 
   override def price(c: BigDecimal): Option[BigDecimal] = {
+    if( prevC == c) {
+      return None
+    }
     if( (prevC - c) < 0 ) {
-      loss.price((prevC - c))
+      loss.price((c - prevC)).isEmpty
     } else {
-      gain.price((prevC - c))
+      gain.price((prevC - c)).isEmpty
     }
     prevC = c
-    if(loss.last == 0 || gain.last == 0) return None
+    if(!gain.buffer.isAtFullCapacity || !loss.buffer.isAtFullCapacity) return None
     Some(BigDecimal(100) - ( BigDecimal(100) / (BigDecimal(1) + (gain.last / loss.last)) ))
   }
 

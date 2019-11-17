@@ -84,9 +84,12 @@ class ScalaBBook extends BBook {
 
   override def onTrade(trade: Trade): Unit = {
     if (Math.random < 0.05) {
-      var quantity = BigDecimal(trade.quantity)
-      println("Nice" + trade)
-      var (price, markup) = prices(trade.base)
+      val quantity = BigDecimal(trade.quantity)
+      val (price, markup) = if(trade.base == Currency.CHF) {
+        prices(trade.term)
+      }else{
+        prices(trade.base)
+      }
 
       if ((BigDecimal(balance.get(trade.base)) - (quantity * price * 2 * (1 + markup))) <= 0) {
 
@@ -95,6 +98,7 @@ class ScalaBBook extends BBook {
         val coverTrade = new Trade(trade.base, trade.term, (quantity * 1.2).bigDecimal)
         bank.buy(coverTrade)
       }
+
 
 
       println(balance)
@@ -106,14 +110,14 @@ class ScalaBBook extends BBook {
     prices(price.base) = (price.rate, price.markup)
 
     if (!trainingMode) {
-      println("Not training mode")
+//      println("Not training mode")
 
       if(areIndicatorsDone() && window.isAtFullCapacity) {
         println("Window is ready...")
         var verifiedWindow = new CircularFifoQueue[List[BigDecimal]](windowSize)
 
         window.forEach {(el) => {
-          verifiedWindow.add(el flatMap {(el) => {el}})
+          verifiedWindow.add(el.flatten)
         }}
 
         val data = preprocessData(verifiedWindow, BigDecimal(price.rate) > priceWindow.peek().rate)
@@ -158,15 +162,8 @@ class ScalaBBook extends BBook {
     data
   }
 
-  def areIndicatorsDone(): Boolean = {
-    window.forEach {(el) => {
-      if (el.isEmpty) {
-        return false
-      }
-    }}
-
-    true
-  }
+  def areIndicatorsDone(): Boolean =
+    window.iterator().asScala.forall { _.forall(_.nonEmpty) }
 
   override def setBank(bank: Bank): Unit = {
     // We cast the interface to the type that implements it
