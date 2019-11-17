@@ -29,7 +29,7 @@ import org.nd4j.linalg.factory.Nd4j
 
 class NeuralModel {
 
-  val batchSize = 2
+  val batchSize = 64
 
   var model: MultiLayerNetwork = _
 
@@ -74,6 +74,7 @@ class NeuralModel {
 
     this.model = new MultiLayerNetwork(conf)
     this.model.init()
+    this.model.setListeners(new ScoreIterationListener(5)) //print the score every 5 iterations
   }
 
   def saveModel(filepath: String) {
@@ -85,16 +86,11 @@ class NeuralModel {
   }
 
   def fit(data: java.lang.Iterable[Pair[INDArray, INDArray]]) {
-    this.model.setListeners(new ScoreIterationListener(5)) //print the score every 5 iterations
-
-    println(this.model.getListeners)
-    // Cast to nothing is needed because the compiler for some reason expects this type
-    val data_it = new INDArrayDataSetIterator(data, batchSize);
-    this.model.fit(data_it)
+      val data_it = new INDArrayDataSetIterator(data, batchSize)
+      this.model.fit(data_it)
   }
 
   def evaluate(data: java.lang.Iterable[Pair[INDArray, INDArray]]): Evaluation = {
-    // Cast to nothing is needed because the compiler for some reason expects this type
     this.model.evaluate(new INDArrayDataSetIterator(data, batchSize))
   }
 

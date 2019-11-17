@@ -27,11 +27,11 @@ class ScalaBBook extends BBook {
    * @return
    */
   def getIndicators = {
-    var a = new SMA(8)
-    var b = new SMA(16)
-    var c = new EMA(4, 12)
-    var d = new EMA(9, 17)
-    List(a, b, new SMA(32), c, d, new MACD(a, b), new MACD(c, d), new RSI())
+    var sma = new SMA(8)
+    var sma16 = new SMA(16)
+    var ema = new EMA(4, 12)
+    var ema9 = new EMA(9, 17)
+    List(sma, sma16, new SMA(32), ema, ema9, new MACD(sma, sma16), new MACD(ema, ema9), new RSI())
   }
 
   /**
@@ -55,9 +55,10 @@ class ScalaBBook extends BBook {
   private var priceWindow = new CircularFifoQueue[Price](windowSize)
 
   /**
-   * Holds the preprocessed dataset
+   * Holds the preprocessed dataset in batches
+   * [ N of [64 x [ 5 x 8, 1 ]]]
    */
-  private var dataSet = new mutable.MutableList[util.ArrayList[Pair[INDArray, INDArray]]]()
+  private var batches = new mutable.MutableList[util.ArrayList[Pair[INDArray, INDArray]]]()
   // Debug purposes
   private var iterator = 0;
 
@@ -140,8 +141,10 @@ class ScalaBBook extends BBook {
 
       var epochs = 100;
       for (i <- 0 to epochs) {
-          for (el <- dataSet) {
-            nn.fit(el)
+          for (batch <- batches) {
+            println(batch.size())
+            nn.fit(batch)
+            batches.last.get(0).getKey()
           }
           println(i + "/" + epochs)
       }
@@ -149,13 +152,13 @@ class ScalaBBook extends BBook {
       println("++++++++++++++++++++++++++++")
       println("Finished Training")
       println("++++++++++++++++++++++++++++")
-      var pair: mutable.MutableList[Pair[INDArray, INDArray]] = dataSet.flatMap { _.asScala }
-      var x = pair(0).getKey()
+//      var pair: mutable.MutableList[Pair[INDArray, INDArray]] = dataSet.flatMap { _.asScala }
+//      var x = pair(0).getKey()
 
-//      nn.saveModel("./hello.world")
-      println(nn.predict(x.reshape(1,40)).toList.head)
+      nn.saveModel("./hello.world")
+//      println(nn.predict(x.reshape(1,40)).toList.head)
 
-      println("Actual answer: " + pair(0).getValue())
+//      println("Actual answer: " + pair(0).getValue())
       Thread.sleep(100000)
     }
   }
@@ -183,7 +186,7 @@ class ScalaBBook extends BBook {
     }
   }
 
-  def preprocessData(window: CircularFifoQueue[List[BigDecimal]], rising: Boolean): util.ArrayList[Pair[INDArray, INDArray]] = {
+  def preprocessData(window: CircularFifoQueue[List[BigDecimal]], rising: Boolean): Pair[INDArray, INDArray] = {
 
     val arraysToStack = new util.ArrayList[INDArray]()
     val newestEl = window.get(windowSize - 1)
@@ -205,19 +208,28 @@ class ScalaBBook extends BBook {
     val groundTruth = Nd4j.create(Array[Double](if (rising) 1.0 else 0.0))
     val datum = new Pair(data, groundTruth)
 
-//    println("Predicting:")
-//    println(nn.predict(data.reshape(1,40)).toList.head)
-//    println("##################################")
+    // println("Predicting:")
+    // println(nn.predict(data.reshape(1,40)).toList.head)
+    // println("##################################")
 
-    val finalDatum = new util.ArrayList[Pair[INDArray, INDArray]]()
-    finalDatum.add(datum)
+    val finalDatum = new Pair[INDArray, INDArray](data, groundTruth)
+    // finalDatum.add(datum)
     // If not initialized, initialize
-    dataSet += finalDatum
+    if(batches.isEmpty) {
+      batches += new util.ArrayList[Pair[INDArray, INDArray]]()
+    } else {
+      if(batches.last.size() == 64) {
+        batches += new util.ArrayList[Pair[INDArray, INDArray]]()
+      }
+    }
+
+    batches.last.add(finalDatum)
+//    println("All batches: " + batches.size)
+//    println("Current batch: " + batches.last.size())
     finalDatum
   }
 
-  def areIndicatorsDone(): Boolean =
-    window.iterator().asScala.forall { _.forall(_.nonEmpty) }
+  def areIndicatorsDone(): Boolean = window.iterator().asScala.forall { _.forall(_.nonEmpty) }
 
   override def setBank(bank: Bank): Unit = {
     // We cast the interface to the type that implements it
