@@ -23,8 +23,9 @@ import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.nd4j.linalg.primitives.Pair
-
 import java.io.File
+
+import org.nd4j.linalg.factory.Nd4j
 
 class NeuralModel {
 
@@ -43,7 +44,7 @@ class NeuralModel {
     val outputNum = 2 // number of output classes
     val rngSeed = 123 // random number seed for reproducibility
     val numEpochs = 15 // number of epochs to perform
-    val rate = 0.0015 // learning rate
+    val rate = 0.00005 // learning rate
 
 
     val conf = new NeuralNetConfiguration.Builder()
@@ -53,12 +54,13 @@ class NeuralModel {
       .activation(Activation.RELU)
       .weightInit(WeightInit.XAVIER)
       .updater(new Nesterovs(rate, 0.98)) //specify the rate of change of the learning rate.
-      .l2(rate * 0.005) // regularize learning model
+      .l2(rate) // regularize learning model
       .list()
       .layer(new DenseLayer.Builder() //create the first input layer.
         .nIn(numRows * numColumns)
         .nOut(500)
-        .build())
+        .build()
+      )
       .layer(new DenseLayer.Builder() //create the second input layer
         .nIn(500)
         .nOut(100)
@@ -72,6 +74,7 @@ class NeuralModel {
 
     this.model = new MultiLayerNetwork(conf)
     this.model.init()
+    this.model.setListeners(new ScoreIterationListener(5)) //print the score every 5 iterations
   }
 
   def saveModel(filepath: String) {
@@ -82,26 +85,17 @@ class NeuralModel {
     this.model = ModelSerializer.restoreMultiLayerNetwork(new File(filepath))
   }
 
-  def fit(data: Iterable[Pair[INDArray, INDArray]]) {
-    this.model.setListeners(new ScoreIterationListener(5)) //print the score every 5 iterations
-
-    // Cast to nothing is needed because the compiler for some reason expects this type
-    val data_it = new INDArrayDataSetIterator(data.asInstanceOf[Nothing], batchSize);
-
-    this.model.fit(data_it)
+  def fit(data: java.lang.Iterable[Pair[INDArray, INDArray]]) {
+      val data_it = new INDArrayDataSetIterator(data, batchSize)
+      this.model.fit(data_it)
   }
 
-  def evaluate(data: Iterable[Pair[INDArray, INDArray]]): Evaluation = {
-    // Cast to nothing is needed because the compiler for some reason expects this type
-    val data_it = new INDArrayDataSetIterator(data.asInstanceOf[Nothing], batchSize);
-
-    val eval = this.model.evaluate(data_it)
-
-    return eval;
+  def evaluate(data: java.lang.Iterable[Pair[INDArray, INDArray]]): Evaluation = {
+    this.model.evaluate(new INDArrayDataSetIterator(data, batchSize))
   }
 
   def predict(x: INDArray): Array[Int] = {
-    return this.model.predict(x)
+    this.model.predict(x.toDense())
   }
 
 }
