@@ -85,7 +85,8 @@ class ScalaBBook extends BBook {
   override def onTrade(trade: Trade): Unit = {
     if (Math.random < 0.05) {
       var quantity = BigDecimal(trade.quantity)
-      var (price, markup) = prices(trade.base))
+      println("Nice" + trade)
+      var (price, markup) = prices(trade.base)
 
       if ((BigDecimal(balance.get(trade.base)) - (quantity * price * 2 * (1 + markup))) <= 0) {
 
@@ -139,24 +140,21 @@ class ScalaBBook extends BBook {
     val arraysToStack = new util.ArrayList[INDArray]()
     val newestEl = window.get(windowSize - 1)
 
-    var i = 0
-
     window.forEach((el) => {
       var doubleArr = new Array[Double](newestEl.length)
       var ref = windowSize
 
       el.zipWithIndex.foreach { case(e, j) => {
-        doubleArr.update(j, (e / newestEl(j)).toDouble)
+//        doubleArr.update(j, (e / newestEl(j)).toDouble)
+        doubleArr.update(j, e.toDouble)
       }}
 
       arraysToStack.add(Nd4j.create(doubleArr))
-      println("NICE" + doubleArr)
     })
 
     val data = Nd4j.vstack(arraysToStack)
 
     dataSet += data
-    i += 1
     data
   }
 
@@ -165,7 +163,6 @@ class ScalaBBook extends BBook {
       if (el.isEmpty) {
         return false
       }
-      println("WINDOWWWWS:" + el);
     }}
 
     true
