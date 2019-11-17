@@ -30,7 +30,7 @@ class NeuralModel {
 
   val batchSize = 64
 
-  var model: MultiLayerNetwork
+  var model: MultiLayerNetwork = _
 
   def NeuralTrainer() {
 

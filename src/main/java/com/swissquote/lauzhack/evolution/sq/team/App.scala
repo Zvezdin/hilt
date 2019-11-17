@@ -27,7 +27,7 @@ object App {
 
 		// Create the application runner
 		val app = new SwissquoteEvolutionBuilder().
-				profile(MarketProfile.UNICORN).
+				profile(MarketProfile.STARTUP).
 				seed(3).
 				team("Hilt").
 				bBook(ourBBook).
@@ -40,6 +40,8 @@ object App {
 		time {
 			app.run()
 		}
+
+		println(ourBBook.stat)
 
 		// Display the result as JSON in console (also available in the file at "Path")
 		println(app.logBook())
