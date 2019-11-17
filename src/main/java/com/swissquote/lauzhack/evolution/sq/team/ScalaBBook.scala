@@ -73,7 +73,6 @@ class ScalaBBook extends BBook {
   private var bank: b = _
   private var balance: util.Map[Currency, java.math.BigDecimal] = _
   private var prices = new mutable.HashMap[Currency, (BigDecimal, BigDecimal)]()
-<<<<<<< HEAD
   prices(Currency.CHF) = (BigDecimal(1), BigDecimal(1))
   var stat = new mutable.HashMap[Currency, (Int, BigDecimal)]()
 
@@ -83,23 +82,21 @@ class ScalaBBook extends BBook {
   stat(Currency.JPY) = (0, BigDecimal(0))
   stat(Currency.USD) = (0, BigDecimal(0))
 
+  private var nn: NeuralModel = _
+
   override def onInit(): Unit = {
 
     bank.buy(new Trade(Currency.EUR, Currency.CHF, new java.math.BigDecimal(800000)))
     bank.buy(new Trade(Currency.JPY, Currency.CHF, new java.math.BigDecimal(21000000)))
     bank.buy(new Trade(Currency.USD, Currency.CHF, new java.math.BigDecimal(800000)))
     bank.buy(new Trade(Currency.GBP, Currency.CHF, new java.math.BigDecimal(800000)))
-=======
-  private var nn: NeuralModel = _
 
-  override def onInit(): Unit = {
 
     nn = new NeuralModel();
     nn.buildModel();
 
     nn.loadModel("./hello.world")
 
->>>>>>> 4ba06b93f0fab6e9eaf29c4abb6e1e751af4748d
 
     println(balance)
   }
