@@ -2,8 +2,8 @@ package com.swissquote.lauzhack.evolution;
 
 import scala.BigDecimal
 import java.util
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import java.util
 
 import scala.BigDecimal
@@ -11,11 +11,11 @@ import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.ta4j.core.BaseBarSeriesBuilder
-
-
 import com.swissquote.lauzhack.evolution.api.{BBook, Bank, Currency, Price, Trade}
 import com.swissquote.lauzhack.evolution.b
 import com.swissquote.lauzhack.evolution.sq.team._
+import org.nd4j.linalg.api.buffer.DataBuffer
+import org.nd4j.linalg.primitives.Pair
 
 import scala.collection.mutable
 
@@ -57,7 +57,7 @@ class ScalaBBook extends BBook {
   /**
    * Holds the preprocessed dataset
    */
-  private var dataSet = new mutable.MutableList[INDArray]
+  private var dataSet = new mutable.MutableList[util.ArrayList[Pair[INDArray, INDArray]]]()
   // Debug purposes
   private var iterator = 0;
 
@@ -72,8 +72,15 @@ class ScalaBBook extends BBook {
   private var bank: b = _
   private var balance: util.Map[Currency, java.math.BigDecimal] = _
   private var prices = new mutable.HashMap[Currency, (BigDecimal, BigDecimal)]()
+  private var nn: NeuralModel = _
 
   override def onInit(): Unit = {
+
+    nn = new NeuralModel();
+    nn.buildModel();
+
+    nn.loadModel("./hello.world")
+
 
     println(balance)
     bank.buy(new Trade(Currency.EUR, Currency.CHF, new java.math.BigDecimal(100000)))
@@ -99,8 +106,6 @@ class ScalaBBook extends BBook {
         bank.buy(coverTrade)
       }
 
-
-
       println(balance)
     }
   }
@@ -109,11 +114,56 @@ class ScalaBBook extends BBook {
 
     prices(price.base) = (price.rate, price.markup)
 
+    calculateIndicators(price)
+
+    allPrices += price
+
+    if (iterator == 5000) {
+      //Save data from allPrices
+      println("++++++++++++++++++++++++++++")
+      println("Loading data has finished...")
+      println("++++++++++++++++++++++++++++")
+
+//      println(dataSet)
+
+      println("++++++++++++++++++++++++++++")
+      println("Initializing neural network.")
+      println("++++++++++++++++++++++++++++")
+
+      var nn = new NeuralModel()
+      nn.buildModel()
+
+      println("++++++++++++++++++++++++++++")
+      println("Loading model")
+      println("++++++++++++++++++++++++++++")
+//      nn.loadModel("./hello.world")
+
+      var epochs = 100;
+      for (i <- 0 to epochs) {
+          for (el <- dataSet) {
+            nn.fit(el)
+          }
+          println(i + "/" + epochs)
+      }
+
+      println("++++++++++++++++++++++++++++")
+      println("Finished Training")
+      println("++++++++++++++++++++++++++++")
+      var pair: mutable.MutableList[Pair[INDArray, INDArray]] = dataSet.flatMap { _.asScala }
+      var x = pair(0).getKey()
+
+//      nn.saveModel("./hello.world")
+      println(nn.predict(x.reshape(1,40)).toList.head)
+
+      println("Actual answer: " + pair(0).getValue())
+      Thread.sleep(100000)
+    }
+  }
+
+  def calculateIndicators(price: Price): Unit = {
     if (!trainingMode) {
-//      println("Not training mode")
 
       if(areIndicatorsDone() && window.isAtFullCapacity) {
-        println("Window is ready...")
         var verifiedWindow = new CircularFifoQueue[List[BigDecimal]](windowSize)
 
         window.forEach {(el) => {
@@ -121,6 +171,7 @@ class ScalaBBook extends BBook {
         }}
 
         val data = preprocessData(verifiedWindow, BigDecimal(price.rate) > priceWindow.peek().rate)
+        iterator += 1
         // Pair data, then
         // Feed to the networks
       }
@@ -130,16 +181,9 @@ class ScalaBBook extends BBook {
       priceWindow.add(price)
 
     }
-
-    allPrices += price
-    iterator += 1
-
-    if (iterator == 5000) {
-      //Save data from allPrices
-    }
   }
 
-  def preprocessData(window: CircularFifoQueue[List[BigDecimal]], rising: Boolean): INDArray = {
+  def preprocessData(window: CircularFifoQueue[List[BigDecimal]], rising: Boolean): util.ArrayList[Pair[INDArray, INDArray]] = {
 
     val arraysToStack = new util.ArrayList[INDArray]()
     val newestEl = window.get(windowSize - 1)
@@ -149,7 +193,8 @@ class ScalaBBook extends BBook {
       var ref = windowSize
 
       el.zipWithIndex.foreach { case(e, j) => {
-//        doubleArr.update(j, (e / newestEl(j)).toDouble)
+        // Normalization, try modified tahn/softmax even though it is kindof obvious it won't work
+        // doubleArr.update(j, (e / newestEl(j)).toDouble)
         doubleArr.update(j, e.toDouble)
       }}
 
@@ -157,9 +202,18 @@ class ScalaBBook extends BBook {
     })
 
     val data = Nd4j.vstack(arraysToStack)
+    val groundTruth = Nd4j.create(Array[Double](if (rising) 1.0 else 0.0))
+    val datum = new Pair(data, groundTruth)
 
-    dataSet += data
-    data
+//    println("Predicting:")
+//    println(nn.predict(data.reshape(1,40)).toList.head)
+//    println("##################################")
+
+    val finalDatum = new util.ArrayList[Pair[INDArray, INDArray]]()
+    finalDatum.add(datum)
+    // If not initialized, initialize
+    dataSet += finalDatum
+    finalDatum
   }
 
   def areIndicatorsDone(): Boolean =
