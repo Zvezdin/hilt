@@ -87,6 +87,11 @@ class ScalaBBook extends BBook {
     nn.loadModel("./hello.world")
   }
 
+  /**
+   * Guess what, finds optimal value.
+   * @param ignored
+   * @return
+   */
   def findOptimalValue(ignored: Currency): Currency = {
     balance.asScala.filter { _._1 != ignored }.maxBy(it => { BigDecimal(it._2) / prices(it._1)._1 })._1
   }
@@ -160,6 +165,10 @@ class ScalaBBook extends BBook {
     }
   }
 
+  /**
+   * Very hard WIP
+   * @param price
+   */
   def neuralNetworkMode(price: Price): Unit = {
     calculateIndicators(price)
 
@@ -207,9 +216,11 @@ class ScalaBBook extends BBook {
     }
   }
 
+  /**
+   * Gets the current price and assembles the current window after calling preprocessing.
+   * @param price
+   */
   def calculateIndicators(price: Price): Unit = {
-    if (!trainingMode) {
-
       if(areIndicatorsDone() && window.isAtFullCapacity) {
         var verifiedWindow = new CircularFifoQueue[List[BigDecimal]](windowSize)
 
@@ -219,17 +230,19 @@ class ScalaBBook extends BBook {
 
         val data = preprocessData(verifiedWindow, BigDecimal(price.rate) > priceWindow.peek().rate)
         iterator += 1
-        // Pair data, then
-        // Feed to the networks
       }
 
       val indicators = indicatorTable((price.base, price.term))
       window.add(indicators map { _.price(price.rate) })
       priceWindow.add(price)
-
-    }
   }
 
+  /**
+   * Does data processing, matrix concatination, normalization, does pairing with Y values for the ML Algorithm.
+   * @param window
+   * @param rising
+   * @return
+   */
   def preprocessData(window: CircularFifoQueue[List[BigDecimal]], rising: Boolean): Pair[INDArray, INDArray] = {
 
     val arraysToStack = new util.ArrayList[INDArray]()
@@ -272,8 +285,17 @@ class ScalaBBook extends BBook {
     finalDatum
   }
 
+  /**
+   * Checks if all the indicators have their prerequisites satisfied.
+   * @returns Boolean
+   */
   def areIndicatorsDone(): Boolean = window.iterator().asScala.forall { _.forall(_.nonEmpty) }
 
+
+  /**
+   * Steals the bank
+   * @param bank
+   */
   override def setBank(bank: Bank): Unit = {
     // We cast the interface to the type that implements it
     this.bank = bank.asInstanceOf[b]
