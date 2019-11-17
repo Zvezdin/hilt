@@ -1,13 +1,21 @@
-package com.swissquote.lauzhack.evolution.sq.team;
+package com.swissquote.lauzhack.evolution;
+
+import scala.BigDecimal
+import java.util
+import scala.collection.JavaConverters._
 
 import java.util
 
 import scala.BigDecimal
-import com.swissquote.lauzhack.evolution.api.{BBook, Bank, Currency, Price, Trade}
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.ta4j.core.BaseBarSeriesBuilder
+
+
+import com.swissquote.lauzhack.evolution.api.{BBook, Bank, Currency, Price, Trade}
+import com.swissquote.lauzhack.evolution.b
+import com.swissquote.lauzhack.evolution.sq.team._
 
 import scala.collection.mutable
 
@@ -22,7 +30,6 @@ class ScalaBBook extends BBook {
     List(a, b, new SMA(32), c, d, new MACD(a, b), new MACD(c, d), new RSI())
   }
 
-  private var bank: Bank = _
   private var trainingMode = false
 
   /**
@@ -51,9 +58,14 @@ class ScalaBBook extends BBook {
   priceTable((Currency.USD, Currency.CHF)) = getIndicators
   priceTable((Currency.GBP, Currency.CHF)) = getIndicators
 
-  override def onInit(): Unit = {
-    var builder = new BaseBarSeriesBuilder
+  private var bank: b = _
+  private var balance: util.Map[Currency, java.math.BigDecimal] = _
+  private var prices = new mutable.HashMap[(Currency, Currency), (BigDecimal, BigDecimal)]()
 
+
+  override def onInit(): Unit = {
+
+    println(balance)
     // Start by buying some cash. Don't search for more logic here: numbers are just random.
     bank.buy(new Trade(Currency.EUR, Currency.CHF, new java.math.BigDecimal(100000)))
     bank.buy(new Trade(Currency.JPY, Currency.CHF, new java.math.BigDecimal(1000000)))
@@ -62,13 +74,29 @@ class ScalaBBook extends BBook {
   }
 
   override def onTrade(trade: Trade): Unit = {
-    if (Math.random < 0.05) {
-      val coverTrade = new Trade(trade.base, trade.term, trade.quantity.multiply(new java.math.BigDecimal(2)))
-      bank.buy(coverTrade)
+     if (Math.random < 0.05) {
+      var quantity = BigDecimal(trade.quantity)
+      var (price, markup) = prices((trade.base, trade.term))
+
+      if((BigDecimal(balance.get(trade.base)) - (quantity * price * 2 * (1 + markup))) <= 0) {
+
+      }else{
+
+        val coverTrade = new Trade(trade.base, trade.term, (quantity * 1.2).bigDecimal)
+        bank.buy(coverTrade)
+      }
+
+
+
+      println(balance)
     }
   }
 
   override def onPrice(price: Price): Unit = {
+//    val series = charts((price.base, price.term))
+//    println(series map { _.price(price.rate) })
+
+    prices((price.base, price.term)) = (price.rate, price.markup)
 
     if (!trainingMode) {
 //      println("Not training mode")
@@ -120,6 +148,8 @@ class ScalaBBook extends BBook {
   }
 
   override def setBank(bank: Bank): Unit = {
-    this.bank = bank;
+    // We cast the interface to the type that implements it
+    this.bank = bank.asInstanceOf[b]
+    this.balance = this.bank.a
   }
 }

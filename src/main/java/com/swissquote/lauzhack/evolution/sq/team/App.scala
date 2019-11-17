@@ -1,7 +1,7 @@
 package com.swissquote.lauzhack.evolution.sq.team;
 
-import com.swissquote.lauzhack.evolution.SwissquoteEvolutionBuilder;
-import com.swissquote.lauzhack.evolution.api.MarketProfile;
+import com.swissquote.lauzhack.evolution.{ScalaBBook, SwissquoteEvolutionBuilder}
+import com.swissquote.lauzhack.evolution.api.MarketProfile
 import com.swissquote.lauzhack.evolution.api.SwissquoteEvolution;
 
 
@@ -27,7 +27,7 @@ object App {
 
 		// Create the application runner
 		val app = new SwissquoteEvolutionBuilder().
-				profile(MarketProfile.SOMETHING).
+				profile(MarketProfile.UNICORN).
 				seed(3).
 				team("Hilt").
 				bBook(ourBBook).
