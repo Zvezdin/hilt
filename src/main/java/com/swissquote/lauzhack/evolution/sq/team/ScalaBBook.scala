@@ -110,6 +110,7 @@ class ScalaBBook extends BBook {
      */
     var value = 100000
     var jpyValue = value*109.88*2 // According to the exchange rate * 2, since the market seems to have japanese bias sometimes
+    var externalTradeBias = 0.2
     /**
      * Trade steps actually divide the trade prices, because sometimes
      * it is better to let 100 CHF go, instead of to disrupt the market to failure
@@ -123,7 +124,7 @@ class ScalaBBook extends BBook {
       if(balance.get(Currency.CHF).compareTo(BigDecimal(value)) < 0) {
         from = findOptimalValue(Currency.CHF)
         for (i <- 0 to value by value/tradeSteps) {
-          trades.enqueue(new Trade(Currency.CHF, from, BigDecimal((value/tradeSteps) * 1.1).bigDecimal))
+          trades.enqueue(new Trade(Currency.CHF, from, BigDecimal((value / tradeSteps) * (1 + externalTradeBias)).bigDecimal))
         }
       }
     }
@@ -137,7 +138,7 @@ class ScalaBBook extends BBook {
       }
 
       for (i <- 0 to value by value/tradeSteps) {
-        trades.enqueue(new Trade(trade.base, from, BigDecimal((value/tradeSteps) * 1.3).bigDecimal))
+        trades.enqueue(new Trade(trade.base, from, BigDecimal((value / tradeSteps) * (1 + externalTradeBias*2)).bigDecimal))
       }
     }
 
