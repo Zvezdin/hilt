@@ -16,7 +16,7 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<nd4j.version>1.0.0-alpha</nd4j.version>
-		<jackson.version>2.10.0</jackson.version>
+		<jackson.version>2.12.7.1</jackson.version>
 	</properties>
 
 	<build>
@@ -96,7 +96,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.10.0</version>
+			<version>2.12.7.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
